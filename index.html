@@ -30,14 +30,12 @@
 <script src="https://cdn.jsdelivr.net/npm/quagga2@1.2.6/dist/quagga.min.js"></script>
 
 <script>
-console.log("Quagga:", Quagga);
-</script>
-  
-<script>
-  const resultEl = document.getElementById('result');
-  const statusEl = document.getElementById('status');
-  const errorEl = document.getElementById('error');
-  const startBtn = document.getElementById('start-btn');
+alert("Quagga = " + typeof Quagga);
+
+const resultEl = document.getElementById('result');
+const statusEl = document.getElementById('status');
+const errorEl = document.getElementById('error');
+const startBtn = document.getElementById('start-btn');
 
   startBtn.addEventListener('click', function() {
     startBtn.style.display = 'none';
