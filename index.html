@@ -9,7 +9,9 @@
          align-items: center; justify-content: center; min-height: 100vh;
          font-family: sans-serif; color: #fff; padding: 16px; box-sizing: border-box; }
   h2 { font-size: 16px; margin-bottom: 12px; text-align: center; }
-  video { width: 100%; max-width: 400px; border-radius: 8px; }
+  #interactive { width: 100%; max-width: 400px; border-radius: 8px; overflow: hidden; position: relative; }
+  #interactive video { width: 100%; }
+  #interactive canvas { display: none; }
   #result { margin-top: 16px; font-size: 18px; font-weight: bold; color: #4ade80; text-align: center; }
   #status { font-size: 13px; color: #aaa; margin-top: 8px; text-align: center; }
   #error { font-size: 13px; color: #f87171; margin-top: 8px; text-align: center; white-space: pre-wrap; }
@@ -20,50 +22,55 @@
 <body>
 <h2>📷 バーコードスキャナ</h2>
 <button id="start-btn">📷 カメラを起動する</button>
-<video id="video" autoplay playsinline muted></video>
+<div id="interactive" class="viewport"></div>
 <div id="result"></div>
 <div id="status"></div>
 <div id="error"></div>
 
-<script src="https://unpkg.com/@zxing/library@0.19.1/umd/index.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/quagga2@1.2.6/dist/quagga.min.js"></script>
 <script>
   const resultEl = document.getElementById('result');
   const statusEl = document.getElementById('status');
   const errorEl = document.getElementById('error');
-  const video = document.getElementById('video');
   const startBtn = document.getElementById('start-btn');
 
-  startBtn.addEventListener('click', async function() {
+  startBtn.addEventListener('click', function() {
     startBtn.style.display = 'none';
     statusEl.textContent = 'カメラを起動中...';
     errorEl.textContent = '';
 
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: 'environment' }
-      });
-      video.srcObject = stream;
-      await video.play();
-      statusEl.textContent = 'バーコードをカメラに向けてください';
-
-      const codeReader = new ZXing.BrowserMultiFormatReader();
-      codeReader.decodeFromVideoElement(video, function(result, err) {
-        if (result) {
-          const isbn = result.getText();
-          resultEl.textContent = '取得: ' + isbn;
-          statusEl.textContent = 'GASに送信中...';
-          stream.getTracks().forEach(function(t) { t.stop(); });
-          if (window.opener) {
-            window.opener.postMessage({ type: 'ISBN_SCANNED', isbn: isbn }, '*');
-          }
-          setTimeout(function() { window.close(); }, 1000);
+    Quagga.init({
+      inputStream: {
+        name: 'Live',
+        type: 'LiveStream',
+        target: document.getElementById('interactive'),
+        constraints: {
+          facingMode: 'environment'
         }
-      });
-    } catch (e) {
-      errorEl.textContent = 'エラー: ' + e.name + '\n' + e.message;
-      statusEl.textContent = '';
-      startBtn.style.display = 'block';
-    }
+      },
+      decoder: {
+        readers: ['ean_reader', 'ean_8_reader', 'code_128_reader']
+      }
+    }, function(err) {
+      if (err) {
+        errorEl.textContent = 'エラー: ' + err;
+        startBtn.style.display = 'block';
+        return;
+      }
+      Quagga.start();
+      statusEl.textContent = 'バーコードをカメラに向けてください';
+    });
+
+    Quagga.onDetected(function(data) {
+      const isbn = data.codeResult.code;
+      resultEl.textContent = '取得: ' + isbn;
+      statusEl.textContent = 'GASに送信中...';
+      Quagga.stop();
+      if (window.opener) {
+        window.opener.postMessage({ type: 'ISBN_SCANNED', isbn: isbn }, '*');
+      }
+      setTimeout(function() { window.close(); }, 1000);
+    });
   });
 </script>
 </body>
