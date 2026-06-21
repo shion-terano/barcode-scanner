@@ -4,25 +4,90 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>バーコードスキャナ</title>
+
 <style>
-  body { margin: 0; background: #1a1a1a; display: flex; flex-direction: column;
-         align-items: center; justify-content: center; min-height: 100vh;
-         font-family: sans-serif; color: #fff; padding: 16px; box-sizing: border-box; }
-  h2 { font-size: 16px; margin-bottom: 12px; text-align: center; }
-  #interactive { width: 100%; max-width: 400px; border-radius: 8px; overflow: hidden; position: relative; }
-  #interactive video { width: 100%; }
-  #interactive canvas { display: none; }
-  #result { margin-top: 16px; font-size: 18px; font-weight: bold; color: #4ade80; text-align: center; }
-  #status { font-size: 13px; color: #aaa; margin-top: 8px; text-align: center; }
-  #error { font-size: 13px; color: #f87171; margin-top: 8px; text-align: center; white-space: pre-wrap; }
-  #start-btn { margin-top: 16px; padding: 12px 24px; font-size: 16px;
-               background: #4ade80; color: #000; border: none; border-radius: 8px; cursor: pointer; }
+body{
+    margin:0;
+    background:#1a1a1a;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    min-height:100vh;
+    font-family:sans-serif;
+    color:#fff;
+    padding:16px;
+    box-sizing:border-box;
+}
+
+h2{
+    font-size:16px;
+    margin-bottom:12px;
+    text-align:center;
+}
+
+#interactive{
+    width:100%;
+    max-width:400px;
+    border-radius:8px;
+    overflow:hidden;
+    position:relative;
+}
+
+#interactive video{
+    width:100%;
+}
+
+#interactive canvas{
+    display:none;
+}
+
+#result{
+    margin-top:16px;
+    font-size:18px;
+    font-weight:bold;
+    color:#4ade80;
+    text-align:center;
+}
+
+#status{
+    font-size:13px;
+    color:#aaa;
+    margin-top:8px;
+    text-align:center;
+}
+
+#error{
+    font-size:13px;
+    color:#f87171;
+    margin-top:8px;
+    text-align:center;
+    white-space:pre-wrap;
+}
+
+#start-btn{
+    margin-top:16px;
+    padding:12px 24px;
+    font-size:16px;
+    background:#4ade80;
+    color:#000;
+    border:none;
+    border-radius:8px;
+    cursor:pointer;
+}
 </style>
+
 </head>
 <body>
-<h2>📷 バーコードスキャナ</h2>
-<button id="start-btn">📷 カメラを起動する</button>
-<div id="interactive" class="viewport"></div>
+
+<h2>📷 ISBNバーコードスキャナ</h2>
+
+<button id="start-btn">
+📷 カメラを起動する
+</button>
+
+<div id="interactive"></div>
+
 <div id="result"></div>
 <div id="status"></div>
 <div id="error"></div>
@@ -30,56 +95,110 @@
 <script src="https://unpkg.com/@ericblade/quagga2/dist/quagga.min.js"></script>
 
 <script>
+
 alert("Quagga = " + typeof Quagga);
 
-const resultEl = document.getElementById('result');
-const statusEl = document.getElementById('status');
-const errorEl = document.getElementById('error');
-const startBtn = document.getElementById('start-btn');
+const resultEl =
+    document.getElementById("result");
 
-  startBtn.addEventListener('click', function() {
-    startBtn.style.display = 'none';
-    statusEl.textContent = 'カメラを起動中...';
-    errorEl.textContent = '';
+const statusEl =
+    document.getElementById("status");
+
+const errorEl =
+    document.getElementById("error");
+
+const startBtn =
+    document.getElementById("start-btn");
+
+let detected = false;
+
+startBtn.addEventListener("click", function(){
+
+    detected = false;
+
+    startBtn.style.display = "none";
+
+    statusEl.textContent =
+        "カメラを起動中...";
+
+    errorEl.textContent = "";
 
     Quagga.init({
-      inputStream: {
-        name: 'Live',
-        type: 'LiveStream',
-        target: document.getElementById('interactive'),
-        constraints: {
-          facingMode: 'environment'
+
+        inputStream:{
+            name:"Live",
+            type:"LiveStream",
+            target:
+                document.getElementById("interactive"),
+
+            constraints:{
+                facingMode:"environment"
+            }
+        },
+
+        decoder:{
+            readers:[
+                "ean_reader"
+            ]
         }
-      },
-      decoder: {
-        readers: ['ean_reader', 'ean_8_reader', 'code_128_reader']
-      }
-    }, function(err) {
-      if (err) {
-  console.error(err);
 
-  errorEl.textContent =
-    'エラー:\n' +
-    JSON.stringify(err, null, 2);
+    }, function(err){
 
-  startBtn.style.display = 'block';
-  return;
-}
-      Quagga.start();
-      statusEl.textContent = 'バーコードをカメラに向けてください';
+        if(err){
+
+            console.error(err);
+
+            errorEl.textContent =
+                JSON.stringify(err,null,2);
+
+            startBtn.style.display =
+                "block";
+
+            return;
+        }
+
+        Quagga.start();
+
+        statusEl.textContent =
+            "ISBNバーコードをカメラに向けてください";
+
     });
 
-    Quagga.onDetected(function(data) {
-      const isbn = data.codeResult.code;
-      resultEl.textContent = '取得: ' + isbn;
-      statusEl.textContent = 'GASに送信中...';
-      Quagga.stop();
-      if (window.opener) {
-        window.opener.postMessage({ type: 'ISBN_SCANNED', isbn: isbn }, '*');
-      }
-      setTimeout(function() { window.close(); }, 1000);
+    Quagga.onDetected(function(data){
+
+        if(detected) return;
+
+        detected = true;
+
+        if(
+            !data ||
+            !data.codeResult ||
+            !data.codeResult.code
+        ){
+            return;
+        }
+
+        const isbn =
+            data.codeResult.code;
+
+        console.log(
+            "検出:",
+            isbn
+        );
+
+        resultEl.textContent =
+            "取得したISBN: " + isbn;
+
+        statusEl.textContent =
+            "読み取り成功";
+
+        Quagga.stop();
+
     });
-  });
+
+});
+
 </script>
+
 </body>
 </html>
