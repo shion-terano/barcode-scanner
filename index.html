@@ -7,10 +7,10 @@
 <style>
   body { margin: 0; background: #1a1a1a; display: flex; flex-direction: column;
          align-items: center; justify-content: center; min-height: 100vh;
-         font-family: sans-serif; color: #fff; padding: 16px; }
+         font-family: sans-serif; color: #fff; padding: 16px; box-sizing: border-box; }
   h2 { font-size: 16px; margin-bottom: 12px; text-align: center; }
-  #video { width: 100%; max-width: 400px; border-radius: 8px; }
-  #result { margin-top: 16px; font-size: 18px; font-weight: bold; color: #4ade80; }
+  video { width: 100%; max-width: 400px; border-radius: 8px; }
+  #result { margin-top: 16px; font-size: 18px; font-weight: bold; color: #4ade80; text-align: center; }
   #status { font-size: 13px; color: #aaa; margin-top: 8px; text-align: center; }
   #error { font-size: 13px; color: #f87171; margin-top: 8px; text-align: center; white-space: pre-wrap; }
   #start-btn { margin-top: 16px; padding: 12px 24px; font-size: 16px;
@@ -18,51 +18,53 @@
 </style>
 </head>
 <body>
-<h2>📷 バーコードをカメラに向けてください</h2>
-<button id="start-btn" onclick="startCamera()">📷 カメラを起動する</button>
+<h2>📷 バーコードスキャナ</h2>
+<button id="start-btn">📷 カメラを起動する</button>
 <video id="video" autoplay playsinline muted></video>
 <div id="result"></div>
 <div id="status"></div>
 <div id="error"></div>
 
-<script type="module">
-  import { BrowserMultiFormatReader } from 'https://cdn.jsdelivr.net/npm/@zxing/browser@0.1.5/esm/index.min.js';
-
+<script src="https://unpkg.com/@zxing/library@0.19.1/umd/index.min.js"></script>
+<script>
   const resultEl = document.getElementById('result');
   const statusEl = document.getElementById('status');
   const errorEl = document.getElementById('error');
   const video = document.getElementById('video');
+  const startBtn = document.getElementById('start-btn');
 
-  window.startCamera = async function() {
-    document.getElementById('start-btn').style.display = 'none';
+  startBtn.addEventListener('click', async function() {
+    startBtn.style.display = 'none';
     statusEl.textContent = 'カメラを起動中...';
     errorEl.textContent = '';
 
     try {
-      const constraints = { video: { facingMode: 'environment' } };
-      const stream = await navigator.mediaDevices.getUserMedia(constraints);
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: 'environment' }
+      });
       video.srcObject = stream;
+      await video.play();
       statusEl.textContent = 'バーコードをカメラに向けてください';
 
-      const codeReader = new BrowserMultiFormatReader();
-      codeReader.decodeFromVideoElement(video, (result, err) => {
+      const codeReader = new ZXing.BrowserMultiFormatReader();
+      codeReader.decodeFromVideoElement(video, function(result, err) {
         if (result) {
           const isbn = result.getText();
           resultEl.textContent = '取得: ' + isbn;
           statusEl.textContent = 'GASに送信中...';
-          stream.getTracks().forEach(t => t.stop());
+          stream.getTracks().forEach(function(t) { t.stop(); });
           if (window.opener) {
             window.opener.postMessage({ type: 'ISBN_SCANNED', isbn: isbn }, '*');
           }
-          setTimeout(() => window.close(), 1000);
+          setTimeout(function() { window.close(); }, 1000);
         }
       });
     } catch (e) {
       errorEl.textContent = 'エラー: ' + e.name + '\n' + e.message;
       statusEl.textContent = '';
-      document.getElementById('start-btn').style.display = 'block';
+      startBtn.style.display = 'block';
     }
-  };
+  });
 </script>
 </body>
 </html>
