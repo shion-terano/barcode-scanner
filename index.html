@@ -28,6 +28,11 @@
 <div id="error"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/quagga2@1.2.6/dist/quagga.min.js"></script>
+
+<script>
+console.log("Quagga:", Quagga);
+</script>
+  
 <script>
   const resultEl = document.getElementById('result');
   const statusEl = document.getElementById('status');
@@ -53,10 +58,15 @@
       }
     }, function(err) {
       if (err) {
-        errorEl.textContent = 'エラー: ' + err;
-        startBtn.style.display = 'block';
-        return;
-      }
+  console.error(err);
+
+  errorEl.textContent =
+    'エラー:\n' +
+    JSON.stringify(err, null, 2);
+
+  startBtn.style.display = 'block';
+  return;
+}
       Quagga.start();
       statusEl.textContent = 'バーコードをカメラに向けてください';
     });
