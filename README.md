@@ -1,1 +1,1 @@
-# barcode-scanner-ver2
+# barcode-scanner
