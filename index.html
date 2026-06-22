@@ -186,13 +186,17 @@ startBtn.addEventListener("click", function(){
             isbn
         );
 
-        resultEl.textContent =
-            "取得したISBN: " + isbn;
+resultEl.textContent = "取得したISBN: " + isbn;
+statusEl.textContent = "GASに送信中...";
+Quagga.stop();
 
-        statusEl.textContent =
-            "読み取り成功";
-
-        Quagga.stop();
+// GAS側にISBNを送信
+if (window.opener) {
+  window.opener.postMessage({ type: 'ISBN_SCANNED', isbn: isbn }, '*');
+  setTimeout(function() { window.close(); }, 1000);
+} else {
+  statusEl.textContent = "読み取り成功！ウィンドウを閉じてGASに戻ってください";
+}
 
     });
 
