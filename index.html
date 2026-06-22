@@ -135,12 +135,16 @@
       statusEl.textContent = 'ISBNバーコードをカメラに向けてください';
     });
 
-    Quagga.onDetected(function(data) {
+Quagga.onDetected(function(data) {
       if (detected) return;
       if (!data || !data.codeResult || !data.codeResult.code) return;
-      detected = true;
 
       const isbn = data.codeResult.code;
+
+      // 978または979で始まる13桁のみ有効
+      if (!/^97[89]\d{10}$/.test(isbn)) return;
+
+      detected = true;
       resultEl.textContent = '取得したISBN: ' + isbn;
       statusEl.textContent = 'GASに送信中...';
       scanLine.style.display = 'none';
